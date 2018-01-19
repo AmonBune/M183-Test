@@ -19,17 +19,30 @@ namespace Pruefung_Praktisch_Musterloesung.Controllers
         * 
         * ANTWORTEN BITTE HIER
         * 
+        * 1: Die Session ID wird nicht überprüft
+        * 1: Der verwendete Browser wird nicht überprüft
+        * 
+        * 2: http://localhost:50374/Lab2/login?sid=blablabla
+        * 2: http://localhost:50374/Lab2/
+        * 
+        * 3: Wenn die Session ID nicht bei jedem Request ändert, kann ein Hacker die Session ID eines legitimen users stehlen.
+        * 3: Wenn der Browser nicht überprüft wird, können keine Gegenmassnahmen getroffen werden, falls sich ein neuer/verdächtiger Browser einloggt
+        * 
         * */
 
         public ActionResult Index() {
-
+            
             var sessionid = Request.QueryString["sid"];
 
             if (string.IsNullOrEmpty(sessionid))
             {
-                var hash = (new SHA1Managed()).ComputeHash(Encoding.UTF8.GetBytes(DateTime.Now.ToString()));
-                sessionid = string.Join("", hash.Select(b => b.ToString("x2")).ToArray());
+                var hash2 = (new SHA1Managed()).ComputeHash(Encoding.UTF8.GetBytes(DateTime.Now.ToString()));
+                sessionid = string.Join("", hash2.Select(b => b.ToString("x2")).ToArray());
             }
+
+            // Hier session ID neu generieren für folgende Requests
+            var hash = (new SHA1Managed()).ComputeHash(Encoding.UTF8.GetBytes(DateTime.Now.ToString()));
+            sessionid = string.Join("", hash.Select(b => b.ToString("x2")).ToArray());
 
             ViewBag.sessionid = sessionid;
 
@@ -43,28 +56,38 @@ namespace Pruefung_Praktisch_Musterloesung.Controllers
             var password = Request["password"];
             var sessionid = Request.QueryString["sid"];
 
-            // hints:
-            //var used_browser = Request.Browser.Platform;
-            //var ip = Request.UserHostAddress;
+            // Browser und IP überprüfen
+            var used_browser = Request.Browser.Platform;
+            var ip = Request.UserHostAddress;
 
-            Lab2Userlogin model = new Lab2Userlogin();
-
-            if (model.checkCredentials(username, password))
+            if (used_browser == "browser that was used before and is known" && ip == "IP that is used frequently by the user")
             {
-                model.storeSessionInfos(username, password, sessionid);
+                Lab2Userlogin model = new Lab2Userlogin();
 
-                HttpCookie c = new HttpCookie("sid");
-                c.Expires = DateTime.Now.AddMonths(2);
-                c.Value = sessionid;
-                Response.Cookies.Add(c);
+                if (model.checkCredentials(username, password))
+                {
+                    model.storeSessionInfos(username, password, sessionid);
 
-                return RedirectToAction("Backend", "Lab2");
+                    HttpCookie c = new HttpCookie("sid");
+                    c.Expires = DateTime.Now.AddMonths(2);
+                    c.Value = sessionid;
+                    Response.Cookies.Add(c);
+
+                    return RedirectToAction("Backend", "Lab2");
+                }
+                else
+                {
+                    ViewBag.message = "Wrong Credentials";
+                    return View();
+                }
             }
             else
             {
-                ViewBag.message = "Wrong Credentials";
+                ViewBag.message = "Browser or IP are suspicious";
                 return View();
             }
+
+            
         }
 
         public ActionResult Backend()

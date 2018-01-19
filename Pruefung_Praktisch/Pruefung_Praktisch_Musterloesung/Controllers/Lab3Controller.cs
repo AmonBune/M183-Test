@@ -15,6 +15,12 @@ namespace Pruefung_Praktisch_Musterloesung.Controllers
         * 
         * ANTWORTEN BITTE HIER
         * 
+        * 1: Der Kommentar kann JavaScript code enthalten
+        * 
+        * 2: http://localhost:50374/Lab3/comment?comment="\"window.alert(message);\""
+        * 
+        * 3: Es kann JavaScript mitgegeben werden, welcher bei einem nächsten Aufrufen der Seite ausgeführt wird.
+        * 
         * */
 
         public ActionResult Index() {
@@ -35,6 +41,10 @@ namespace Pruefung_Praktisch_Musterloesung.Controllers
         {
             var comment = Request["comment"];
             var postid = Int32.Parse(Request["postid"]);
+
+            // Remove escaping characters
+            comment = comment.Replace("'", String.Empty);
+            comment = comment.Replace("\"", String.Empty);
 
             Lab3Postcomments model = new Lab3Postcomments();
 
